@@ -1,8 +1,11 @@
-import type { NextPage } from 'next'
 import Head from 'next/head'
+import Link from 'next/link'
 import Header from '../components/Header'
+import { sanityClient, urlFor } from '../sanity'
+import { Props } from '../typings'
 
-const Home: NextPage = () => {
+const Home = ({ posts }: Props) => {
+  console.log('posts: ', posts)
   return (
     <div className="mx-auto max-w-7xl">
       <Head>
@@ -27,8 +30,51 @@ const Home: NextPage = () => {
           <img src="https://iconape.com/wp-content/files/gc/11611/png/medium-m.png"></img>
         </div>
       </div>
+      <div>
+        <div className="sm:grid:cols-2 grid grid-cols-1 gap-3 p-2 md:gap-6 md:p-6 lg:grid-cols-3 lg:p-6">
+          {posts.map((post) => (
+            <Link key={post._id} href={`/posts/${post.slug.current}`}>
+              <div className="">
+                <img src={urlFor(post.mainImage).url()}></img>
+                <div className="flex justify-between bg-white p-5">
+                  <p>{post.title}</p>
+                  <p>
+                    {post.description} by {post.author.name}
+                  </p>
+                  <img
+                    className="h-12 w-12 rounded-full"
+                    src={urlFor(post.author.image).url()}
+                    alt="author"
+                  ></img>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   )
+}
+
+export const getServerSideProps = async () => {
+  const query = `*[_type == "post"]{
+    _id,
+    title,
+    slug,
+    author -> {
+    name, image
+  },
+  description,
+  mainImage
+  }`
+
+  const posts = await sanityClient.fetch(query)
+
+  return {
+    props: {
+      posts,
+    },
+  }
 }
 
 export default Home
